@@ -40,7 +40,7 @@ jobs:
         run: |
           git diff --exit-code gh-activity-report || echo "diff=1" >> "${GITHUB_OUTPUT}"
 
-      - uses: actions/create-github-app-token@v2
+      - uses: actions/create-github-app-token@v3
         id: app-token
         if: steps.check-diff.outputs.diff == '1'
         with:
