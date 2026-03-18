@@ -20,57 +20,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-
-      - name: Update version in gh-activity-report
-        id: update-version
-        env:
-          NEW_VERSION: ${{ steps.release-drafter.outputs.resolved_version }}
-        run: |
-          if [ -n "${NEW_VERSION}" ]; then
-            sed -i "s/^GH_AR_VERSION=.*/GH_AR_VERSION=${NEW_VERSION}/" gh-activity-report
-            echo "version=${NEW_VERSION}" >> "${GITHUB_OUTPUT}"
-          fi
-
-      - name: Check for changes
-        id: check-diff
-        run: |
-          git diff --exit-code gh-activity-report || echo "diff=1" >> "${GITHUB_OUTPUT}"
-
-      - uses: actions/create-github-app-token@v3
-        id: app-token
-        if: steps.check-diff.outputs.diff == '1'
-        with:
-          app-id: ${{ secrets.MY_ACTIONS_APP_ID }}
-          private-key: ${{ secrets.MY_ACTIONS_APP_PRIVATE_KEY }}
-
-      - name: Commit changes and create PR
-        if: steps.check-diff.outputs.diff == '1'
-        uses: suzuki-shunsuke/commit-action@f12e2d628a4ab72dcefe7890ae07e8dbf1e201b9 # v0.1.1
-        with:
-          commit_message: "Update version to ${{ steps.update-version.outputs.version }}"
-          branch: ci/update-version-${{ steps.update-version.outputs.version }}
-          parent_branch: main
-          github_token: ${{ steps.app-token.outputs.token }}
-          files: |
-            gh-activity-report
-
-      - name: Create pull request
-        if: steps.check-diff.outputs.diff == '1'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          VERSION: ${{ steps.update-version.outputs.version }}
-        run: |
-          gh pr create \
-            --base main \
-            --head "ci/update-version-${VERSION}" \
-            --title "Update version to ${VERSION}" \
-            --body "This PR updates the gh-activity-report version to ${VERSION}." \
-          || :
-
   publish_release:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
