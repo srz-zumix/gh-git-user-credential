@@ -37,6 +37,36 @@ For GitHub Enterprise, add an entry for your host as well.
     helper = !gh git-user-credential
 ```
 
+### GUI clients (Sourcetree)
+
+GUI clients may not include `gh` in their `PATH`. Run the following in a terminal
+where `gh` is available to register its absolute path. On Windows, use Git Bash:
+
+```sh
+gh_path="$(command -v gh)"
+if [ -n "$gh_path" ]; then
+    helper=$(printf '!GH_BIN="%s" "%s" git-user-credential' "$gh_path" "$gh_path")
+    git config --global 'credential.https://github.com.helper' \
+        "$helper"
+fi
+```
+
+For GitHub Enterprise, replace `https://github.com` with your host URL.
+The helper uses `GH_BIN` when provided, otherwise searches `PATH`, then common
+installation locations for the current platform:
+
+- macOS: Homebrew (`/opt/homebrew/bin`, `/usr/local/bin`) and `/usr/bin`.
+- Linux and other Unix systems: `/usr/local/bin`, `/usr/bin`, `/bin`, Snap
+    (`/snap/bin`), and Linuxbrew (`/home/linuxbrew/.linuxbrew/bin`).
+- Windows (Git Bash/Cygwin): GitHub CLI under Program Files, WinGet links,
+    Scoop, and Chocolatey. Windows paths are converted with `cygpath` when available.
+- All platforms: `~/.local/bin` and `~/bin`.
+
+For other installation locations, set `GH_BIN` to the executable's absolute path.
+This extension requires Bash; native PowerShell/CMD execution is not supported.
+The absolute path in the Git configuration is necessary because Git must locate
+`gh` before it can start this extension. Register it again if `gh` moves.
+
 ### 2. Switch users with `includeIf`
 
 Use `includeIf` to apply a different `user.name` per directory.
@@ -76,6 +106,14 @@ With this configuration, repositories under `~/work/` will have `user.name = wor
 # Check that the credential helper works correctly
 echo "protocol=https
 host=github.com" | git credential fill
+```
+
+Path resolution tests run in GitHub Actions on Linux, macOS, and Windows for
+pushes and pull requests, and can also be triggered manually.
+From a repository checkout, run the same tests without accessing tokens:
+
+```sh
+bash tests/gh-path.sh
 ```
 
 ## License
