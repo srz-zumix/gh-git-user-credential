@@ -22,7 +22,8 @@ cygpath() {
 check_windows_path() (
   expected="$test_dir/$1"
   shift
-  unset GH_BIN PROGRAMFILES ProgramFiles ProgramW6432 LOCALAPPDATA ChocolateyInstall SCOOP
+  GH_BIN=
+  unset PROGRAMFILES ProgramFiles ProgramW6432 LOCALAPPDATA ChocolateyInstall SCOOP
   export OSTYPE=msys HOME="$test_dir/home"
   if [[ "$#" -gt 0 ]]; then
     export "$@"
@@ -51,7 +52,7 @@ check_windows_path 'home/scoop/apps/gh/current/bin/gh.exe'
 
 for platform in linux-gnu darwin freebsd; do
   (
-    unset GH_BIN
+    GH_BIN=
     export OSTYPE="$platform" HOME="$test_dir/home"
     mkdir -p "$HOME/.local/bin"
     ln -sf /usr/bin/true "$HOME/.local/bin/gh"
