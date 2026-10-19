@@ -10,13 +10,6 @@ test_path="$test_dir/path"
 mkdir -p "$test_path"
 ln -s "$(builtin command -v sed)" "$test_path/sed"
 
-command() {
-  if [[ "${1:-}" == -v && "${2:-}" == gh ]]; then
-    return 1
-  fi
-  builtin command "$@"
-}
-
 cygpath() {
   case "$2" in
     C:/*) printf '%s/%s\n' "$test_dir" "${2#C:/}" ;;
@@ -35,7 +28,7 @@ check_windows_path() (
   fi
   mkdir -p "$(dirname "$expected")"
   ln -s /usr/bin/true "$expected"
-  source <(sed '/^GIT_USER=/,$d' "$helper")
+  source <(sed -e 's/command -v gh/false/' -e '/^GIT_USER=/,$d' "$helper")
   [[ "$GH_BIN" == "$expected" ]]
   printf 'PASS: %s\n' "$expected"
 )
@@ -50,7 +43,7 @@ check_windows_path 'home/scoop/apps/gh/current/bin/gh.exe'
 
 (
   export OSTYPE=cygwin GH_BIN='C:/Program Files/GitHub CLI/gh.exe'
-  source <(sed '/^GIT_USER=/,$d' "$helper")
+  source <(sed -e 's/command -v gh/false/' -e '/^GIT_USER=/,$d' "$helper")
   [[ "$GH_BIN" == "$test_dir/Program Files/GitHub CLI/gh.exe" ]]
   printf 'PASS: explicit Windows path conversion\n'
 )
@@ -62,7 +55,7 @@ for platform in linux-gnu darwin freebsd; do
     mkdir -p "$HOME/.local/bin"
     ln -sf /usr/bin/true "$HOME/.local/bin/gh"
     export PATH="$test_path"
-    source <(sed '/^GIT_USER=/,$d' "$helper")
+    source <(sed -e 's/command -v gh/false/' -e '/^GIT_USER=/,$d' "$helper")
     [[ -x "$GH_BIN" ]]
     # shellcheck disable=SC2154
     [[ " ${candidates[*]} " == *" $HOME/.local/bin/gh "* ]]
