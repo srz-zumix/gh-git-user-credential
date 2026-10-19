@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Tests source selected helper sections dynamically and isolate environment changes in subshells.
+# shellcheck disable=SC1090,SC2030,SC2031
 set -euo pipefail
 
 helper="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/gh-git-user-credential"
@@ -26,7 +28,7 @@ check_windows_path() (
   unset PROGRAMFILES ProgramFiles ProgramW6432 LOCALAPPDATA ChocolateyInstall SCOOP
   export OSTYPE=msys HOME="$test_dir/home"
   if [[ "$#" -gt 0 ]]; then
-    export "$@"
+    export "${@?}"
   fi
   mkdir -p "$(dirname "$expected")"
   ln -s /usr/bin/true "$expected"
@@ -58,6 +60,7 @@ for platform in linux-gnu darwin freebsd; do
     ln -sf /usr/bin/true "$HOME/.local/bin/gh"
     source <(sed '/^GIT_USER=/,$d' "$helper")
     [[ -x "$GH_BIN" ]]
+    # shellcheck disable=SC2154
     [[ " ${candidates[*]} " == *" $HOME/.local/bin/gh "* ]]
     if [[ "$platform" != darwin ]]; then
       [[ " ${candidates[*]} " == *' /snap/bin/gh '* ]]
@@ -91,10 +94,12 @@ check_credentials() (
     fi
   fi
   : > "$test_dir/calls"
+  # shellcheck disable=SC2329
   git() {
     [[ "$*" == 'config user.name' ]]
     printf '%s\n' test-user
   }
+  # shellcheck disable=SC2329
   mock_gh() {
     printf '%s\n' "$*" >> "$test_dir/calls"
     if [[ "$2" == token ]]; then
