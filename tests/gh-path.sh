@@ -6,6 +6,9 @@ set -euo pipefail
 helper="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/gh-git-user-credential"
 test_dir=$(mktemp -d)
 trap 'rm -rf "$test_dir"' EXIT
+test_path="$test_dir/path"
+mkdir -p "$test_path"
+ln -s "$(builtin command -v sed)" "$test_path/sed"
 
 command() {
   if [[ "${1:-}" == -v && "${2:-}" == gh ]]; then
@@ -58,6 +61,7 @@ for platform in linux-gnu darwin freebsd; do
     export OSTYPE="$platform" HOME="$test_dir/home"
     mkdir -p "$HOME/.local/bin"
     ln -sf /usr/bin/true "$HOME/.local/bin/gh"
+    export PATH="$test_path"
     source <(sed '/^GIT_USER=/,$d' "$helper")
     [[ -x "$GH_BIN" ]]
     # shellcheck disable=SC2154
