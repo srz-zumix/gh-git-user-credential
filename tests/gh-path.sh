@@ -56,10 +56,10 @@ for platform in linux-gnu darwin freebsd; do
     source <("$sed_bin" -e 's/command -v gh/false/' -e '/^GIT_USER=/,$d' "$helper")
     [[ -x "$GH_BIN" ]]
     # shellcheck disable=SC2154
-    [[ " ${candidates[*]} " == *" $HOME/.local/bin/gh "* ]]
+    [[ " ${candidates[*]-} " == *" $HOME/.local/bin/gh "* ]]
     if [[ "$platform" != darwin ]]; then
-      [[ " ${candidates[*]} " == *' /snap/bin/gh '* ]]
-      [[ " ${candidates[*]} " == *' /home/linuxbrew/.linuxbrew/bin/gh '* ]]
+      [[ " ${candidates[*]-} " == *' /snap/bin/gh '* ]]
+      [[ " ${candidates[*]-} " == *' /home/linuxbrew/.linuxbrew/bin/gh '* ]]
     fi
     printf 'PASS: %s fallback candidates\n' "$platform"
   )
