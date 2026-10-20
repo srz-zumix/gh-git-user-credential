@@ -6,9 +6,7 @@ set -euo pipefail
 helper="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/gh-git-user-credential"
 test_dir=$(mktemp -d)
 trap 'rm -rf "$test_dir"' EXIT
-test_path="$test_dir/path"
-mkdir -p "$test_path"
-ln -s "$(builtin command -v sed)" "$test_path/sed"
+sed_bin=$(builtin command -v sed)
 
 cygpath() {
   case "$2" in
@@ -28,7 +26,7 @@ check_windows_path() (
   fi
   mkdir -p "$(dirname "$expected")"
   ln -s /usr/bin/true "$expected"
-  source <(sed -e 's/command -v gh/false/' -e '/^GIT_USER=/,$d' "$helper")
+  source <("$sed_bin" -e 's/command -v gh/false/' -e '/^GIT_USER=/,$d' "$helper")
   [[ "$GH_BIN" == "$expected" ]]
   printf 'PASS: %s\n' "$expected"
 )
@@ -43,7 +41,7 @@ check_windows_path 'home/scoop/apps/gh/current/bin/gh.exe'
 
 (
   export OSTYPE=cygwin GH_BIN='C:/Program Files/GitHub CLI/gh.exe'
-  source <(sed -e 's/command -v gh/false/' -e '/^GIT_USER=/,$d' "$helper")
+  source <("$sed_bin" -e 's/command -v gh/false/' -e '/^GIT_USER=/,$d' "$helper")
   [[ "$GH_BIN" == "$test_dir/Program Files/GitHub CLI/gh.exe" ]]
   printf 'PASS: explicit Windows path conversion\n'
 )
@@ -54,8 +52,8 @@ for platform in linux-gnu darwin freebsd; do
     export OSTYPE="$platform" HOME="$test_dir/home"
     mkdir -p "$HOME/.local/bin"
     ln -sf /usr/bin/true "$HOME/.local/bin/gh"
-    export PATH="$test_path"
-    source <(sed -e 's/command -v gh/false/' -e '/^GIT_USER=/,$d' "$helper")
+    export PATH=
+    source <("$sed_bin" -e 's/command -v gh/false/' -e '/^GIT_USER=/,$d' "$helper")
     [[ -x "$GH_BIN" ]]
     # shellcheck disable=SC2154
     [[ " ${candidates[*]} " == *" $HOME/.local/bin/gh "* ]]
@@ -67,7 +65,7 @@ for platform in linux-gnu darwin freebsd; do
   )
   (
     export OSTYPE="$platform" GH_BIN=/usr/bin/true
-    source <(sed '/^GIT_USER=/,$d' "$helper")
+    source <("$sed_bin" '/^GIT_USER=/,$d' "$helper")
     [[ "$GH_BIN" == /usr/bin/true ]]
     printf 'PASS: %s explicit path priority\n' "$platform"
   )
