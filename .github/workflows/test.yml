@@ -1,0 +1,31 @@
+name: Test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gh-path:
+    name: Path resolution (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check Bash syntax
+        run: |
+          bash -n gh-git-user-credential
+          bash -n tests/gh-path.sh
+      - name: Test path resolution
+        run: bash tests/gh-path.sh
